@@ -1,5 +1,7 @@
 CHull
 =====
+[![Build Status](https://travis-ci.org/davidavdav/CHull.jl.svg)](https://travis-ci.org/davidavdav/CHull.jl)
+
 
 A Julia wrapper around a PyCall wrapper around the qhull Convex Hull library
 
