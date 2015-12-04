@@ -10,8 +10,7 @@ module CHull
 export Chull, chull, display, show
 
 using PyCall
-@pyimport pyhull
-@pyimport pyhull.convex_hull as convex_hull
+@pyimport scipy.spatial as spatial
 
 type Chull{T<:Real}
     points::Array{T}
@@ -19,7 +18,7 @@ type Chull{T<:Real}
 end
 
 function chull{T<:Real}(x::Array{T})
-    py = convex_hull.ConvexHull(x)
+    py = spatial.ConvexHull(x)
     points = convert(Array,py["points"])[1]
     vertices = convert(Array{Int},py["vertices"]) + 1
     Chull(points, vertices)
