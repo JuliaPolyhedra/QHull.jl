@@ -3,9 +3,9 @@ CHull
 [![Build Status](https://travis-ci.org/davidavdav/CHull.jl.svg)](https://travis-ci.org/davidavdav/CHull.jl)
 
 
-A Julia wrapper around a PyCall wrapper around the qhull Convex Hull library
+A Julia wrapper around a PyCall wrapper around `scipy.spatial.ConvexHull`, which uses the qhull Convex Hull library.
 
-The qhull library for computing the convex hull of data points seems to be the standard and very widely used. 
+The qhull library for computing the convex hull of data points seems to be the standard and very widely used.
 
 This module is a quick wrapper around a Python wrapper around the library, as suggested by [Miles Lubin](https://groups.google.com/d/topic/julia-users/e9m8t5W3TVs/discussion). 
 
