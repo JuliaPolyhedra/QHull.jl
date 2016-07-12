@@ -44,12 +44,12 @@ function show(io::IO, ch::Chull)
 end
 
 using RecipesBase
-@recipe function f{T<:Chull}(::Type{T}, val::T)
+@recipe function f{T<:Chull}(val::T)
     x = [x[1] for x in val.points]
     y = [x[2] for x in val.points]
     seriestype --> :shape
     legend --> false
-    Shape(x[val.vertices], y[val.vertices])
+    x[val.vertices], y[val.vertices]
 end
 
 end
