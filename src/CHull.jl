@@ -46,12 +46,11 @@ end
 
 using RecipesBase
 @recipe function f{T<:Chull}(val::T)
-    length(val.points[1]) && warning("Only the two first dimensions are plotted!")
-    x = [x[1] for x in val.points]
-    y = [x[2] for x in val.points]
+    size(val.points, 2) > 2 && warning("Only the two first dimensions are plotted!")
+    x = val.points[val.vertices,:]
     seriestype --> :shape
     legend --> false
-    x[val.vertices], y[val.vertices]
+    x[:,1], x[:,2]
 end
 
 end
