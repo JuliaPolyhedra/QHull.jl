@@ -1,8 +1,8 @@
-sudo: false
 language: julia
 julia:
  - 0.4
  - 0.5
  - nightly
-after_success:
-  - julia -e 'cd(Pkg.dir("CHull")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+before_install:
+ - sudo apt-get -qq update
+ - sudo apt-get install -y python-scipy
