@@ -1,13 +1,8 @@
-language: cpp
-compiler:
-  - clang
-notifications:
-  email: false
-before_install:
-  - sudo add-apt-repository ppa:staticfloat/julia-deps -y
-  - sudo add-apt-repository ppa:staticfloat/julianightlies -y
-  - sudo apt-get update -qq -y
-  - sudo apt-get install libpcre3-dev julia -y
-script:
-  - julia -e 'Pkg.init(); Pkg.clone("https://github.com/davidavdav/CHull.jl.git");' 
-
+sudo: false
+language: julia
+julia:
+ - 0.4
+ - 0.5
+ - nightly
+after_success:
+  - julia -e 'cd(Pkg.dir("CHull")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'

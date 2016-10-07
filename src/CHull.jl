@@ -13,19 +13,26 @@ using PyCall
 @pyimport scipy.spatial as spatial
 
 type Chull{T<:Real}
-    points::Array{T,2}
-    vertices::Array{Int,1}
-    simplices::Array{Array{Int,1},1}
+    points::Array{T}
+    vertices::Vector{Int}
+    simplices::Vector{Vector{Int}}
+end
+
+## helper for base-0 / base-1 difference
+incone(x) = for i in 1:length(x)
+    x[i] += 1
 end
 
 function chull{T<:Real}(x::Array{T})
-    r,c = size(x)
+    r, c = size(x)
     py = spatial.ConvexHull(x)
-    points = convert(Array{T},py["points"])
-    vertices = convert(Array{Int},py["vertices"]) + 1
-    s1 = convert(Array{Array{Int,1},1},py["simplices"])
-    n = length(s1)
-    simplices = s1 + [ones(Int,c) for i = 1:n]
+    points = convert(Array{T}, py["points"])
+    vertices = convert(Array{Int}, py["vertices"])
+    incone(vertices)
+    simplices = convert(Vector{Vector{Int}}, py["simplices"])
+    for simplex in simplices
+        incone(simplex)
+    end
     Chull(points, vertices, simplices)
 end
 
