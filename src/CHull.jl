@@ -19,11 +19,13 @@ type Chull{T<:Real}
 end
 
 function chull{T<:Real}(x::Array{T})
+    r,c = size(x)
     py = spatial.ConvexHull(x)
-    points = convert(Array{T,2},py["points"])
+    points = convert(Array{T},py["points"])
     vertices = convert(Array{Int},py["vertices"]) + 1
-    n = length(vertices)
-    simplices = convert(Array{Array{Int,1},1},py["simplices"]) + [ones(Int,2) for i = 1:n]
+    s1 = convert(Array{Array{Int,1},1},py["simplices"])
+    n = length(s1)
+    simplices = s1 + [ones(Int,c) for i = 1:n]
     Chull(points, vertices, simplices)
 end
 
