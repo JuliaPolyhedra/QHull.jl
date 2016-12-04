@@ -6,3 +6,4 @@ julia:
 before_install:
  - sudo apt-get -qq update
  - sudo apt-get install -y python-scipy
+ - julia -e 'Pkg.clone("git://github.com/blegat/Polyhedra.jl.git")'

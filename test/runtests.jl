@@ -17,3 +17,5 @@ hull = QHull.chull(pts)
 ## multi-dim
 x = randn(1000, 5)
 hull = QHull.chull(x)
+
+include("polyhedron.jl")
