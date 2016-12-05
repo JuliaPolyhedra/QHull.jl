@@ -60,7 +60,7 @@ function qhull{N}(p::QHullPolyhedron{N}, rep=:Auto)
     end
 end
 
-function qhull{N}(h::SimpleVRepresentation{N, Float64})
+function qhull{N, T}(h::SimpleVRepresentation{N, T})
     if hasrays(h)
         error("Rays are not supported.")
     end
@@ -79,7 +79,7 @@ function qhull{N}(h::SimpleVRepresentation{N, Float64})
     vnored, h
 end
 
-function qhull{N}(h::SimpleHRepresentation{N, Float64})
+function qhull{N, T<:Real}(h::SimpleHRepresentation{N, T})
     A = h.A
     b = h.b
     linset = h.linset
@@ -87,7 +87,7 @@ function qhull{N}(h::SimpleHRepresentation{N, Float64})
         error("The origin should be in the interior of the polytope so equalities are not supported.")
     end
     m = size(A, 1)
-    B = Matrix{Float64}(m, N)
+    B = Matrix{T}(m, N)
     for i in 1:m
         if i in linset || b[i] < epsz
             error("The origin should be in the interior of the polytope but the $(i)th inequality is not safisfied at the origin.")
@@ -113,8 +113,8 @@ function qhull{N}(h::SimpleHRepresentation{N, Float64})
     end
     rays = collect(irays)
     points = collect(ipoints)
-    R = Matrix{Float64}(length(rays), N)
-    V = Matrix{Float64}(length(points), N)
+    R = Matrix{T}(length(rays), N)
+    V = Matrix{T}(length(points), N)
     nr = nv = 0
     for i in 1:nvreps
         if i in irays
