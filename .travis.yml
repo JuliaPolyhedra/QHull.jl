@@ -5,4 +5,4 @@ julia:
     - nightly
 script:
     - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-    - julia -e 'Pkg.clone(pwd()); ENV["PYTHON"]=""; Pkg.build("QHull"); Pkg.test("QHull")'
+    - julia -e 'Pkg.clone("git://github.com/blegat/Polyhedra.jl.git"); Pkg.clone(pwd()); ENV["PYTHON"]=""; Pkg.build("QHull"); Pkg.test("QHull")'
