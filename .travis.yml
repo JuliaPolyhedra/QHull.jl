@@ -1,10 +1,8 @@
 language: julia
 julia:
- - 0.4
- - 0.5
- - nightly
-before_install:
- - sudo apt-get -qq update
- - julia -e 'Pkg.clone("git://github.com/blegat/Polyhedra.jl.git")'
- - sudo apt-get install -y python-pip
- - sudo pip install scipy
+    - 0.4
+    - 0.5
+    - nightly
+script:
+    - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+    - julia -e 'Pkg.clone(pwd()); ENV["PYTHON"]=""; Pkg.build("QHull"); Pkg.test("QHull")'
