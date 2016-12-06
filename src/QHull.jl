@@ -30,6 +30,7 @@ incone(x) = for i in 1:length(x)
 end
 
 function chull{T<:Real}(x::Matrix{T})
+    @show keys(spatial)
     py = spatial[:ConvexHull](x)
     points = convert(Matrix{T}, py["points"])
     vertices = convert(Vector{Int}, py["vertices"])
