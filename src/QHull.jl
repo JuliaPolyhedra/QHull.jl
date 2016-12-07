@@ -18,9 +18,10 @@ function __init__()
 end
 
 type Chull{T<:Real}
-    points::Array{T}
+    points::Matrix{T}
     vertices::Vector{Int}
     simplices::Vector{Vector{Int}}
+    facets::Matrix{T}
 end
 
 ## helper for base-0 / base-1 difference
@@ -28,18 +29,20 @@ incone(x) = for i in 1:length(x)
     x[i] += 1
 end
 
-function chull{T<:Real}(x::Array{T})
-    r, c = size(x)
+function chull{T<:Real}(x::Matrix{T})
     py = spatial[:ConvexHull](x)
-    points = convert(Array{T}, py["points"])
-    vertices = convert(Array{Int}, py["vertices"])
+    points = convert(Matrix{T}, py["points"])
+    vertices = convert(Vector{Int}, py["vertices"])
     incone(vertices)
     simplices = convert(Vector{Vector{Int}}, py["simplices"])
     for simplex in simplices
         incone(simplex)
     end
-    Chull(points, vertices, simplices)
+    facets = convert(Matrix{T}, py["equations"])
+    Chull(points, vertices, simplices, facets)
 end
+
+include("polyhedron.jl")
 
 function Base.show(io::IO, ::MIME"text/plain", ch::Chull)
     println(io, string("Convex Hull of ", size(ch.points, 1), " points in ", size(ch.points, 2), " dimensions"))
