@@ -185,7 +185,7 @@ end
 # Implementation of Polyhedron's mandatory interface
 polyhedron{N}(repit::Union{Representation{N},HRepIterator{N},VRepIterator{N}}, ::QHullLib) = QHullPolyhedron{N}(repit)
 
-getlibraryfor{T<:AbstractFloat}(::QHullPolyhedron, ::Type{T}) = QHullLib()
+getlibraryfor{T<:AbstractFloat}(::QHullPolyhedron, n::Int, ::Type{T}) = QHullLib()
 
 (::Type{QHullPolyhedron{N}}){N, T}(it::HRepIterator{N,T}) = QHullPolyhedron{N}(SimpleHRepresentation{N,Float64}(it))
 (::Type{QHullPolyhedron{N}}){N, T}(it::VRepIterator{N,T}) = QHullPolyhedron{N}(SimpleVRepresentation{N,Float64}(it))
