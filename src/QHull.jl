@@ -42,6 +42,7 @@ function chull{T<:Real}(x::Matrix{T})
     # fix base-0 / base-1 difference
     ch.vertices += 1
     ch.simplices += 1
+    ch.neighbors += 1
     return ch
 end
 

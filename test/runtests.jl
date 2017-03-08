@@ -12,7 +12,7 @@ pts = [-1.0 0;
 hull = QHull.chull(pts)
 @test hull.vertices == [1, 3, 4, 6, 7]
 @test size(hull.points) == size(pts)
-@test hull.simplices == Array{Int,1}[[3,1], [4,3], [6,4], [7,1], [7,6]]
+@test hull.simplices == Array{Int32,2}[3 1; 4 3; 6 4; 7 1; 7 6]
 
 ## multi-dim
 x = randn(1000, 5)
