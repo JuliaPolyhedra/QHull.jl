@@ -73,8 +73,8 @@ function qhull{N, T}(h::SimpleVRepresentation{N, T})
     ch = chull(V)
     V = ch.points[ch.vertices, :]
     vnored = SimpleVRepresentation(V)
-    A = ch.facets[:, 1:N]
-    b = ch.facets[:, N+1]
+    A = ch.equations[:, 1:N]
+    b = ch.equations[:, N+1]
     h = SimpleHRepresentation(A, b)
     vnored, h
 end
@@ -97,7 +97,7 @@ function qhull{N, T<:Real}(h::SimpleHRepresentation{N, T})
     ch = chull(B)
     C = ch.points[ch.vertices, :]
     hnored = SimpleHRepresentation(C, ones(size(C, 1)))
-    Vlift = ch.facets
+    Vlift = ch.equations
     nvreps = size(Vlift, 1)
     irays = IntSet()
     ipoints = IntSet()
