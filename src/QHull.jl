@@ -23,7 +23,7 @@ type Chull{T<:Real}
     ndim::Int
     max_bound::Vector{T}
     min_bound::Vector{T}
-    neighbours::Matrix{T}
+    neighbors::Matrix{T}
     npoints::Int
     nsimplex::Int
     points::Matrix{T}
