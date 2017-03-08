@@ -27,7 +27,7 @@ type Chull{T<:Real}
     npoints::Int64
     nsimplex::Int64
     points::Matrix{T}
-    simplices::Vector{Vector{Int32}}
+    simplices::Matrix{Int32}
     vertices::Vector{Int32}
     volume::T
 end
