@@ -17,18 +17,18 @@ function __init__()
     copy!(spatial, pyimport_conda("scipy.spatial", "scipy"))
 end
 
-type Chull{T<:Real,U<:Int}
+type Chull{T<:Real}
     area::T
     equations::Matrix{T}
-    ndim::U
+    ndim::Int64
     max_bound::Vector{T}
     min_bound::Vector{T}
-    neighbors::Matrix{U}
-    npoints::U
-    nsimplex::U
+    neighbors::Matrix{Int32}
+    npoints::Int64
+    nsimplex::Int64
     points::Matrix{T}
-    simplices::Vector{Vector{U}}
-    vertices::Vector{U}
+    simplices::Vector{Vector{Int32}}
+    vertices::Vector{Int32}
     volume::T
 end
 
