@@ -18,28 +18,32 @@ function __init__()
 end
 
 type Chull{T<:Real}
+    area::T
+    equations::Matrix{T}
+    ndim::Int64
+    max_bound::Vector{T}
+    min_bound::Vector{T}
+    neighbors::Matrix{Int32}
+    npoints::Int64
+    nsimplex::Int64
     points::Matrix{T}
-    vertices::Vector{Int}
-    simplices::Vector{Vector{Int}}
-    facets::Matrix{T}
+    simplices::Matrix{Int32}
+    vertices::Vector{Int32}
+    volume::T
 end
 
-## helper for base-0 / base-1 difference
-incone(x) = for i in 1:length(x)
-    x[i] += 1
-end
 
 function chull{T<:Real}(x::Matrix{T})
-    py = spatial[:ConvexHull](x)
-    points = convert(Matrix{T}, py["points"])
-    vertices = convert(Vector{Int}, py["vertices"])
-    incone(vertices)
-    simplices = convert(Vector{Vector{Int}}, py["simplices"])
-    for simplex in simplices
-        incone(simplex)
-    end
-    facets = convert(Matrix{T}, py["equations"])
-    Chull(points, vertices, simplices, facets)
+
+    hull = spatial[:ConvexHull](x)
+
+    ch = Chull([hull[field] for field in fieldnames(Chull)]...)
+
+    # fix base-0 / base-1 difference
+    ch.vertices += 1
+    ch.simplices += 1
+    ch.neighbors += 1
+    return ch
 end
 
 include("polyhedron.jl")
