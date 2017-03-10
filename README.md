@@ -1,6 +1,6 @@
 QHull
 =====
-[![Build Status](https://travis-ci.org/davidavdav/QHull.jl.svg)](https://travis-ci.org/davidavdav/QHull.jl)
+[![Build Status](https://travis-ci.org/JuliaPolyhedra/QHull.jl.svg)](https://travis-ci.org/JuliaPolyhedra/QHull.jl)
 
 
 A Julia wrapper around a PyCall wrapper around `scipy.spatial.ConvexHull`, which uses the qhull Convex Hull library.
