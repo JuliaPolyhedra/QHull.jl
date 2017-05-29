@@ -22,6 +22,8 @@ type Chull{T<:Real}
     vertices::Vector{Int}
     simplices::Vector{Vector{Int}}
     facets::Matrix{T}
+    area::Float64
+    volume::Float64
 end
 
 ## helper for base-0 / base-1 difference
@@ -39,7 +41,9 @@ function chull{T<:Real}(x::Matrix{T})
         incone(simplex)
     end
     facets = convert(Matrix{T}, py["equations"])
-    Chull(points, vertices, simplices, facets)
+    area = convert(Float64, py["area"])
+    volume = convert(Float64, py["volume"])
+    Chull(points, vertices, simplices, facets, area, volume)
 end
 
 include("polyhedron.jl")

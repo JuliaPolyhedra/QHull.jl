@@ -13,15 +13,17 @@ type QHullPolyhedron{N} <: Polyhedron{N, Float64}
     vlinearitydetected::Bool
     noredundantinequality::Bool
     noredundantgenerator::Bool
+    area::Nullable{Float64}
+    volume::Nullable{Float64}
 
     function QHullPolyhedron(ine::HRepresentation{N, Float64}, ext::VRepresentation{N, Float64}, hld::Bool, vld::Bool, nri::Bool, nrg::Bool)
-        new(ine, nothing, ext, nothing, hld, vld, nri, nrg)
+        new(ine, nothing, ext, nothing, hld, vld, nri, nrg, nothing, nothing)
     end
     function QHullPolyhedron(ine::HRepresentation{N, Float64})
-        new(ine, nothing, nothing, nothing, false, false, false, false)
+        new(ine, nothing, nothing, nothing, false, false, false, false, nothing, nothing)
     end
     function QHullPolyhedron(ext::VRepresentation{N, Float64})
-        new(nothing, nothing, ext, nothing, false, false, false, false)
+        new(nothing, nothing, ext, nothing, false, false, false, false, nothing, nothing)
     end
 end
 
@@ -40,7 +42,7 @@ epsz = 1e-8
 
 function qhull{N}(p::QHullPolyhedron{N}, rep=:Auto)
     if rep == :V || (rep == :Auto && (!isnull(p.exts) || !isnull(p.exts)))
-        p.ext, ine = qhull(getexts(p))
+        p.ext, ine, p.area, p.volume = qhull(getexts(p))
         p.exts = nothing
         p.noredundantgenerator = true
         if isnull(p.ine)
@@ -50,7 +52,7 @@ function qhull{N}(p::QHullPolyhedron{N}, rep=:Auto)
         end
     else
         @assert rep == :H || rep == :Auto
-        p.ine, ext = qhull(getines(p))
+        p.ine, ext, p.area, p.volume = qhull(getines(p))
         p.ines = nothing
         p.noredundantinequality = true
         if isnull(p.ext)
@@ -76,7 +78,7 @@ function qhull{N, T}(h::SimpleVRepresentation{N, T})
     A = ch.facets[:, 1:N]
     b = ch.facets[:, N+1]
     h = SimpleHRepresentation(A, b)
-    vnored, h
+    vnored, h, ch.area, ch.volume
 end
 
 function qhull{N, T<:Real}(h::SimpleHRepresentation{N, T})
@@ -126,7 +128,7 @@ function qhull{N, T<:Real}(h::SimpleHRepresentation{N, T})
         end
     end
     v = SimpleVRepresentation(V, R)
-    hnored, v
+    hnored, v, ch.area, ch.volume
 end
 
 function getine(p::QHullPolyhedron)
@@ -206,6 +208,7 @@ function (::Type{QHullPolyhedron{N}}){N}(; eqs=nothing, ineqs=nothing, points=no
     end
 end
 
+changefulldim{N}(::Type{QHullPolyhedron{N}}, n) = QHullPolyhedron{n}
 function Base.copy{N}(p::QHullPolyhedron{N})
     ine = nothing
     if !isnull(p.ine)
@@ -246,6 +249,13 @@ function removehredundancy!(p::QHullPolyhedron)
 end
 function removevredundancy!(p::QHullPolyhedron)
     qhull(p, :V)
+end
+
+function volume(p::QHullPolyhedron)
+    if isnull(p.volume)
+        qhull(p)
+    end
+    get(p.volume)
 end
 
 for f in [:hashreps, :nhreps, :starthrep, :hasineqs, :nineqs, :startineq, :haseqs, :neqs, :starteq]
