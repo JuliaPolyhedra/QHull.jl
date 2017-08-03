@@ -8,5 +8,5 @@ for n in 2:4
 end
 
 @testset "Polyhedra tests" begin
-    runtests(QHull.QHullLib(), tests)
+    runtests(QHull.QHullLibrary(), tests)
 end

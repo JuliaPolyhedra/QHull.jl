@@ -1,7 +1,6 @@
 language: julia
 julia:
-    - 0.5
-    - nightly
+    - 0.6
 script:
     - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
     - julia -e 'Pkg.clone("git://github.com/blegat/Polyhedra.jl.git"); Pkg.clone(pwd()); ENV["PYTHON"]=""; Pkg.build("QHull"); Pkg.test("QHull")'

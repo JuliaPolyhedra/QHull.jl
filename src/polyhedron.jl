@@ -1,10 +1,12 @@
 importall Base, Polyhedra
-export QHullLib
+export QHullLibrary
 
-type QHullLib <: PolyhedraLibrary
+struct QHullLibrary <: PolyhedraLibrary
+    solver
 end
+QHullLibrary() = QHullLibrary(nothing)
 
-type QHullPolyhedron{N} <: Polyhedron{N, Float64}
+mutable struct QHullPolyhedron{N} <: Polyhedron{N, Float64}
     ine::Nullable{HRepresentation{N, Float64}}
     ines::Nullable{SimpleHRepresentation{N, Float64}}
     ext::Nullable{VRepresentation{N, Float64}}
@@ -13,17 +15,18 @@ type QHullPolyhedron{N} <: Polyhedron{N, Float64}
     vlinearitydetected::Bool
     noredundantinequality::Bool
     noredundantgenerator::Bool
+    solver
     area::Nullable{Float64}
     volume::Nullable{Float64}
 
-    function QHullPolyhedron(ine::HRepresentation{N, Float64}, ext::VRepresentation{N, Float64}, hld::Bool, vld::Bool, nri::Bool, nrg::Bool)
-        new(ine, nothing, ext, nothing, hld, vld, nri, nrg, nothing, nothing)
+    function QHullPolyhedron{N}(ine::HRepresentation{N, Float64}, ext::VRepresentation{N, Float64}, hld::Bool, vld::Bool, nri::Bool, nrg::Bool, solver) where N
+        new(ine, nothing, ext, nothing, hld, vld, nri, nrg, solver, nothing, nothing)
     end
-    function QHullPolyhedron(ine::HRepresentation{N, Float64})
-        new(ine, nothing, nothing, nothing, false, false, false, false, nothing, nothing)
+    function QHullPolyhedron{N}(ine::HRepresentation{N, Float64}, solver) where N
+        new(ine, nothing, nothing, nothing, false, false, false, false, solver, nothing, nothing)
     end
-    function QHullPolyhedron(ext::VRepresentation{N, Float64})
-        new(nothing, nothing, ext, nothing, false, false, false, false, nothing, nothing)
+    function QHullPolyhedron{N}(ext::VRepresentation{N, Float64}, solver) where N
+        new(nothing, nothing, ext, nothing, false, false, false, false, solver, nothing, nothing)
     end
 end
 
@@ -42,7 +45,7 @@ epsz = 1e-8
 
 function qhull{N}(p::QHullPolyhedron{N}, rep=:Auto)
     if rep == :V || (rep == :Auto && (!isnull(p.exts) || !isnull(p.exts)))
-        p.ext, ine, p.area, p.volume = qhull(getexts(p))
+        p.ext, ine, p.area, p.volume = qhull(getexts(p), p.solver)
         p.exts = nothing
         p.noredundantgenerator = true
         if isnull(p.ine)
@@ -52,7 +55,7 @@ function qhull{N}(p::QHullPolyhedron{N}, rep=:Auto)
         end
     else
         @assert rep == :H || rep == :Auto
-        p.ine, ext, p.area, p.volume = qhull(getines(p))
+        p.ine, ext, p.area, p.volume = qhull(getines(p), p.solver)
         p.ines = nothing
         p.noredundantinequality = true
         if isnull(p.ext)
@@ -62,7 +65,7 @@ function qhull{N}(p::QHullPolyhedron{N}, rep=:Auto)
     end
 end
 
-function qhull{N, T}(h::SimpleVRepresentation{N, T})
+function qhull{N, T}(h::SimpleVRepresentation{N, T}, solver=nothing)
     if hasrays(h)
         error("Rays are not supported.")
     end
@@ -81,15 +84,19 @@ function qhull{N, T}(h::SimpleVRepresentation{N, T})
     vnored, h, ch.area, ch.volume
 end
 
-function qhull{N, T<:Real}(h::SimpleHRepresentation{N, T})
+function qhull{N, T<:Real}(h::SimpleHRepresentation{N, T}, solver=nothing)
     A = h.A
     b = h.b
     linset = h.linset
     if !isempty(linset)
-        error("The origin should be in the interior of the polytope so equalities are not supported.")
+        error("Equalities are not supported.")
     end
     m = size(A, 1)
     B = Matrix{T}(m, N)
+    if !(zeros(N) in h)
+        chebycenter, chebyradius = chebyshevcenter(h, solver)
+        translate(p, -[2.5, 3.5, 3.75, 4])
+    end
     for i in 1:m
         if i in linset || b[i] < epsz
             error("The origin should be in the interior of the polytope but the $(i)th inequality is not safisfied at the origin.")
@@ -185,28 +192,15 @@ end
 
 
 # Implementation of Polyhedron's mandatory interface
-polyhedron{N}(repit::Union{Representation{N},HRepIterator{N},VRepIterator{N}}, ::QHullLib) = QHullPolyhedron{N}(repit)
+polyhedron{N}(repit::Union{Representation{N},HRepIterator{N},VRepIterator{N}}, p::QHullLibrary) = QHullPolyhedron{N}(repit, p.solver)
 
-getlibraryfor{T<:AbstractFloat}(::QHullPolyhedron, n::Int, ::Type{T}) = QHullLib()
+getlibraryfor{T<:AbstractFloat}(p::QHullPolyhedron, n::Int, ::Type{T}) = QHullLibrary(p.solver)
 
-(::Type{QHullPolyhedron{N}}){N, T}(it::HRepIterator{N,T}) = QHullPolyhedron{N}(SimpleHRepresentation{N,Float64}(it))
-(::Type{QHullPolyhedron{N}}){N, T}(it::VRepIterator{N,T}) = QHullPolyhedron{N}(SimpleVRepresentation{N,Float64}(it))
+QHullPolyhedron{N}(it::HRepIterator{N,T}) where {N, T} = QHullPolyhedron{N}(SimpleHRepresentation{N,Float64}(it))
+QHullPolyhedron{N}(it::VRepIterator{N,T}) where {N, T} = QHullPolyhedron{N}(SimpleVRepresentation{N,Float64}(it))
 
-function (::Type{QHullPolyhedron{N}}){N}(; eqs=nothing, ineqs=nothing, points=nothing, rays=nothing)
-    noth = eqs === nothing && ineqs === nothing
-    notv = points === nothing && rays === nothing
-    if noth && notv
-        error("QHullPolyhedron should have at least one iterator to be built")
-    end
-    if !noth && !notv
-        error("QHullPolyhedron constructed with a combination of eqs/ineqs with points/rays")
-    end
-    if notv
-        QHullPolyhedron{N}(SimpleHRepresentation{N, Float64}(eqs=eqs, ineqs=ineqs))
-    else
-        QHullPolyhedron{N}(SimpleVRepresentation{N, Float64}(points=points, rays=rays))
-    end
-end
+QHullPolyhedron{N}(hps::EqIterator{N}, hss::IneqIterator) where N = QHullPolyhedron{N}(SimpleHRepresentation{N, Float64}(hps, hss))
+QHullPolyhedron{N}(ps::PointIterator{N}, rs::RayIterator) where N = QHullPolyhedron{N}(SimpleVRepresentation{N, Float64}(ps, rs))
 
 changefulldim{N}(::Type{QHullPolyhedron{N}}, n) = QHullPolyhedron{n}
 function Base.copy{N}(p::QHullPolyhedron{N})
