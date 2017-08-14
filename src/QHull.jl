@@ -17,7 +17,7 @@ function __init__()
     copy!(spatial, pyimport_conda("scipy.spatial", "scipy"))
 end
 
-type Chull{T<:Real}
+mutable struct Chull{T<:Real}
     points::Matrix{T}
     vertices::Vector{Int}
     simplices::Vector{Vector{Int}}
@@ -31,7 +31,7 @@ incone(x) = for i in 1:length(x)
     x[i] += 1
 end
 
-function chull{T<:Real}(x::Matrix{T})
+function chull(x::Matrix{T}) where T<:Real
     py = spatial[:ConvexHull](x)
     points = convert(Matrix{T}, py["points"])
     vertices = convert(Vector{Int}, py["vertices"])

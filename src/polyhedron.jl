@@ -34,8 +34,8 @@ end
 # saying false normally do not give troubles
 decomposedhfast{N}(::Type{QHullPolyhedron{N}}) = false
 decomposedvfast{N}(::Type{QHullPolyhedron{N}}) = false
-decomposedhfast{N}(p::QHullPolyhedron{N}) = decomposedhfast(QHullPolyhedron{N})
-decomposedvfast{N}(p::QHullPolyhedron{N}) = decomposedvfast(QHullPolyhedron{N})
+decomposedhfast(p::QHullPolyhedron{N}) where {N} = decomposedhfast(QHullPolyhedron{N})
+decomposedvfast(p::QHullPolyhedron{N}) where {N} = decomposedvfast(QHullPolyhedron{N})
 
 eltype{N}(::Type{QHullPolyhedron{N}}) = Float64
 eltype(::QHullPolyhedron) = Float64
@@ -43,7 +43,7 @@ eltype(::QHullPolyhedron) = Float64
 # Helpers
 epsz = 1e-8
 
-function qhull{N}(p::QHullPolyhedron{N}, rep=:Auto)
+function qhull(p::QHullPolyhedron{N}, rep=:Auto) where N
     if rep == :V || (rep == :Auto && (!isnull(p.exts) || !isnull(p.exts)))
         p.ext, ine, p.area, p.volume = qhull(getexts(p), p.solver)
         p.exts = nothing
@@ -65,7 +65,7 @@ function qhull{N}(p::QHullPolyhedron{N}, rep=:Auto)
     end
 end
 
-function qhull{N, T}(h::SimpleVRepresentation{N, T}, solver=nothing)
+function qhull(h::SimpleVRepresentation{N, T}, solver=nothing) where {N, T}
     if hasrays(h)
         error("Rays are not supported.")
     end
@@ -84,7 +84,7 @@ function qhull{N, T}(h::SimpleVRepresentation{N, T}, solver=nothing)
     vnored, h, ch.area, ch.volume
 end
 
-function qhull{N, T<:Real}(h::SimpleHRepresentation{N, T}, solver=nothing)
+function qhull(h::SimpleHRepresentation{N, T}, solver=nothing) where {N, T<:Real}
     A = h.A
     b = h.b
     linset = h.linset
@@ -181,20 +181,20 @@ function clearfield!(p::QHullPolyhedron)
     noredundantinequality = false
     noredundantgenerator = false
 end
-function updateine!{N}(p::QHullPolyhedron{N}, ine::HRepresentation{N, Float64})
+function updateine!(p::QHullPolyhedron{N}, ine::HRepresentation{N, Float64}) where N
     clearfield!(p)
     p.ine = ine
 end
-function updateext!{N}(p::QHullPolyhedron{N}, ext::VRepresentation{N, Float64})
+function updateext!(p::QHullPolyhedron{N}, ext::VRepresentation{N, Float64}) where N
     clearfield!(p)
     p.ext = ext
 end
 
 
 # Implementation of Polyhedron's mandatory interface
-polyhedron{N}(repit::Union{Representation{N},HRepIterator{N},VRepIterator{N}}, p::QHullLibrary) = QHullPolyhedron{N}(repit, p.solver)
+polyhedron(repit::Union{Representation{N},HRepIterator{N},VRepIterator{N}}, p::QHullLibrary) where {N} = QHullPolyhedron{N}(repit, p.solver)
 
-getlibraryfor{T<:AbstractFloat}(p::QHullPolyhedron, n::Int, ::Type{T}) = QHullLibrary(p.solver)
+getlibraryfor(p::QHullPolyhedron, n::Int, ::Type{T}) where {T<:AbstractFloat} = QHullLibrary(p.solver)
 
 QHullPolyhedron{N}(it::HRepIterator{N,T}) where {N, T} = QHullPolyhedron{N}(SimpleHRepresentation{N,Float64}(it))
 QHullPolyhedron{N}(it::VRepIterator{N,T}) where {N, T} = QHullPolyhedron{N}(SimpleVRepresentation{N,Float64}(it))
@@ -203,7 +203,7 @@ QHullPolyhedron{N}(hps::EqIterator{N}, hss::IneqIterator) where N = QHullPolyhed
 QHullPolyhedron{N}(ps::PointIterator{N}, rs::RayIterator) where N = QHullPolyhedron{N}(SimpleVRepresentation{N, Float64}(ps, rs))
 
 changefulldim{N}(::Type{QHullPolyhedron{N}}, n) = QHullPolyhedron{n}
-function Base.copy{N}(p::QHullPolyhedron{N})
+function Base.copy(p::QHullPolyhedron{N}) where N
     ine = nothing
     if !isnull(p.ine)
         ine = copy(get(p.ine))
@@ -214,10 +214,10 @@ function Base.copy{N}(p::QHullPolyhedron{N})
     end
     QHullPolyhedron{N}(ine, ext, p.hlinearitydetected, p.vlinearitydetected, p.noredundantinequality, p.noredundantgenerator)
 end
-function Base.push!{N}(p::QHullPolyhedron{N}, ine::HRepresentation{N})
+function Base.push!(p::QHullPolyhedron{N}, ine::HRepresentation{N}) where N
     updateine!(p, intersect(getine(p), changeeltype(ine, Float64)))
 end
-function Base.push!{N}(p::QHullPolyhedron{N}, ext::VRepresentation{N})
+function Base.push!(p::QHullPolyhedron{N}, ext::VRepresentation{N}) where N
     updateext!(p, getext(p) + changeeltype(ext, Float64))
 end
 function hrepiscomputed(p::QHullPolyhedron)
