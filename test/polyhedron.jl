@@ -1,12 +1,12 @@
+using Polyhedra
 const polyhedra_test = joinpath(Pkg.dir("Polyhedra"), "test")
 
-include(joinpath(polyhedra_test, "alltests.jl"))
-
-tests = Tuple{String, Function}[]
-for n in 2:4
-    push!(tests, ("Cross Polytope in $n dimensions", lib->crosspolytopetest(lib, n)))
-end
+include(joinpath(polyhedra_test, "solvers.jl"))
+include(joinpath(polyhedra_test, "utils.jl"))
+include(joinpath(polyhedra_test, "polyhedra.jl"))
 
 @testset "Polyhedra tests" begin
-    runtests(QHull.QHullLibrary(), tests)
+    polyhedratest(QHull.QHullLibrary(lp_solver), ["jumpsimplex", "ex1", "infeasible", "nonfulldimensional",
+                                                  "doc", "simplex", "permutahedron", "board", "issue48", "empty",
+                                                  "orthantdecompose", "largedecompose"])
 end

@@ -14,7 +14,7 @@ hull = QHull.chull(pts)
 @test size(hull.points) == size(pts)
 @test hull.simplices == Array{Int,1}[[3,1], [4,3], [6,4], [7,1], [7,6]]
 
-## multi-dim
+# multi-dim
 x = randn(1000, 5)
 hull = QHull.chull(x)
 

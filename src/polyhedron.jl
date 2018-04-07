@@ -1,50 +1,65 @@
-importall Base, Polyhedra
+using Polyhedra
 export QHullLibrary
+using MathProgBase
 
 struct QHullLibrary <: PolyhedraLibrary
     solver
 end
 QHullLibrary() = QHullLibrary(nothing)
+Polyhedra.similar_library(l::QHullLibrary, d::FullDim{1}, ::Type{T}) where T = default_library(d, T)
+Polyhedra.similar_library(l::QHullLibrary, d::FullDim, ::Type{T}) where T = default_library(d, T)
+Polyhedra.similar_library(l::QHullLibrary, ::FullDim, ::Type{<:AbstractFloat}) = QHullLibrary(l.solver)
 
 mutable struct QHullPolyhedron{N} <: Polyhedron{N, Float64}
     ine::Nullable{HRepresentation{N, Float64}}
-    ines::Nullable{SimpleHRepresentation{N, Float64}}
+    ines::Nullable{MixedMatHRep{N, Float64}}
     ext::Nullable{VRepresentation{N, Float64}}
-    exts::Nullable{SimpleVRepresentation{N, Float64}}
-    hlinearitydetected::Bool
-    vlinearitydetected::Bool
+    exts::Nullable{MixedMatVRep{N, Float64}}
     noredundantinequality::Bool
     noredundantgenerator::Bool
     solver
     area::Nullable{Float64}
     volume::Nullable{Float64}
 
-    function QHullPolyhedron{N}(ine::HRepresentation{N, Float64}, ext::VRepresentation{N, Float64}, hld::Bool, vld::Bool, nri::Bool, nrg::Bool, solver) where N
-        new(ine, nothing, ext, nothing, hld, vld, nri, nrg, solver, nothing, nothing)
+    function QHullPolyhedron{N}(ine, ext, nri::Bool, nrg::Bool, solver) where N
+        new(ine, nothing, ext, nothing, nri, nrg, solver, nothing, nothing)
     end
     function QHullPolyhedron{N}(ine::HRepresentation{N, Float64}, solver) where N
-        new(ine, nothing, nothing, nothing, false, false, false, false, solver, nothing, nothing)
+        new(ine, nothing, nothing, nothing, false, false, solver, nothing, nothing)
     end
     function QHullPolyhedron{N}(ext::VRepresentation{N, Float64}, solver) where N
-        new(nothing, nothing, ext, nothing, false, false, false, false, solver, nothing, nothing)
+        new(nothing, nothing, ext, nothing, false, false, solver, nothing, nothing)
+    end
+end
+Polyhedra.library(p::QHullPolyhedron) = QHullLibrary(p.solver)
+Polyhedra.similar_type(::Type{<:QHullPolyhedron}, d::FullDim{1}, ::Type{Float64}) = default_type(d, Float64)
+Polyhedra.similar_type(::Type{<:QHullPolyhedron}, d::FullDim, ::Type{T}) where T = default_type(d, T)
+# FIXME the solver is lost here, it makes doc test fail
+Polyhedra.similar_type(::Type{<:QHullPolyhedron}, ::FullDim{N}, ::Type{Float64}) where N = QHullPolyhedron{N}
+
+function Polyhedra.arraytype(p::QHullPolyhedron)
+    if isnull(p.ine) && !isnull(p.ines)
+        p.ine = get(p.ines)
+    end
+    if isnull(p.ext) && !isnull(p.exts)
+        p.ext = get(p.exts)
+    end
+    if isnull(p.ine)
+        Polyhedra.arraytype(get(p.ext))
+    elseif isnull(p.ext)
+        Polyhedra.arraytype(get(p.ine))
+    else
+        @assert Polyhedra.arraytype(get(p.ine)) == Polyhedra.arraytype(get(p.ext))
+        Polyhedra.arraytype(get(p.ine))
     end
 end
 
-# ine may decompose fast but if ine is nothing I do not want to ask to compute it to see the type it is
-# saying false normally do not give troubles
-decomposedhfast{N}(::Type{QHullPolyhedron{N}}) = false
-decomposedvfast{N}(::Type{QHullPolyhedron{N}}) = false
-decomposedhfast(p::QHullPolyhedron{N}) where {N} = decomposedhfast(QHullPolyhedron{N})
-decomposedvfast(p::QHullPolyhedron{N}) where {N} = decomposedvfast(QHullPolyhedron{N})
-
-eltype{N}(::Type{QHullPolyhedron{N}}) = Float64
-eltype(::QHullPolyhedron) = Float64
 
 # Helpers
 epsz = 1e-8
 
 function qhull(p::QHullPolyhedron{N}, rep=:Auto) where N
-    if rep == :V || (rep == :Auto && (!isnull(p.exts) || !isnull(p.exts)))
+    if rep == :V || (rep == :Auto && (!isnull(p.ext) || !isnull(p.exts)))
         p.ext, ine, p.area, p.volume = qhull(getexts(p), p.solver)
         p.exts = nothing
         p.noredundantgenerator = true
@@ -65,47 +80,45 @@ function qhull(p::QHullPolyhedron{N}, rep=:Auto) where N
     end
 end
 
-function qhull(h::SimpleVRepresentation{N, T}, solver=nothing) where {N, T}
+function qhull(h::MixedMatVRep{N, T}, solver=nothing) where {N, T}
     if hasrays(h)
         error("Rays are not supported.")
     end
     V = h.V
-    linset = h.Vlinset
-    clinset = collect(linset)
-    if !isempty(linset)
-        V = [V; -(@view V[clinset, :])]
-    end
     ch = chull(V)
     V = ch.points[ch.vertices, :]
-    vnored = SimpleVRepresentation(V)
+    vnored = vrep(V)
     A = ch.facets[:, 1:N]
     b = ch.facets[:, N+1]
-    h = SimpleHRepresentation(A, b)
+    h = hrep(A, b)
     vnored, h, ch.area, ch.volume
 end
 
-function qhull(h::SimpleHRepresentation{N, T}, solver=nothing) where {N, T<:Real}
-    A = h.A
-    b = h.b
+function qhull(h::MixedMatHRep{N, T}, solver=nothing) where {N, T<:Real}
     linset = h.linset
     if !isempty(linset)
         error("Equalities are not supported.")
     end
+    containorigin = ininterior(zeros(N), h)
+    if !containorigin
+        chebycenter, chebyradius = chebyshevcenter(h, solver)
+        h = translate(h, -chebycenter)
+    end
+
+    A = h.A
+    b = h.b
     m = size(A, 1)
     B = Matrix{T}(m, N)
-    if !(zeros(N) in h)
-        chebycenter, chebyradius = chebyshevcenter(h, solver)
-        translate(p, -[2.5, 3.5, 3.75, 4])
-    end
     for i in 1:m
-        if i in linset || b[i] < epsz
+        @assert !(i in linset)
+        if b[i] < epsz
             error("The origin should be in the interior of the polytope but the $(i)th inequality is not safisfied at the origin.")
         end
         B[i,:] = (@view A[i,:]) / b[i]
     end
     ch = chull(B)
     C = ch.points[ch.vertices, :]
-    hnored = SimpleHRepresentation(C, ones(size(C, 1)))
+    hnored = hrep(C, ones(size(C, 1)))
     Vlift = ch.facets
     nvreps = size(Vlift, 1)
     irays = IntSet()
@@ -128,13 +141,19 @@ function qhull(h::SimpleHRepresentation{N, T}, solver=nothing) where {N, T<:Real
     for i in 1:nvreps
         if i in irays
             nr += 1
-            R[nr, :] = @view Vlift[i, 1:N]
+            R[nr, :] = -@view Vlift[i, 1:N]
         else
             nv += 1
-            V[nv, :] = (@view Vlift[i, 1:N]) / Vlift[i, N+1]
+            V[nv, :] = -(@view Vlift[i, 1:N]) / Vlift[i, N+1]
         end
     end
-    v = SimpleVRepresentation(V, R)
+    v = vrep(V, R)
+    if !containorigin
+        hnored = translate(hnored, chebycenter)
+    end
+    if !containorigin
+        v = translate(v, chebycenter)
+    end
     hnored, v, ch.area, ch.volume
 end
 
@@ -150,7 +169,7 @@ function getine(p::QHullPolyhedron)
 end
 function getines(p::QHullPolyhedron)
     if isnull(p.ines)
-        p.ines = SimpleHRepresentation(getine(p))
+        p.ines = MixedMatHRep(getine(p))
     end
     get(p.ines)
 end
@@ -166,7 +185,7 @@ function getext(p::QHullPolyhedron)
 end
 function getexts(p::QHullPolyhedron)
     if isnull(p.exts)
-        p.exts = SimpleVRepresentation(getext(p))
+        p.exts = MixedMatVRep(getext(p))
     end
     get(p.exts)
 end
@@ -176,33 +195,21 @@ function clearfield!(p::QHullPolyhedron)
     p.ines = nothing
     p.ext = nothing
     p.exts = nothing
-    hlinearitydetected = false
-    vlinearitydetected = false
-    noredundantinequality = false
-    noredundantgenerator = false
+    p.noredundantinequality = false
+    p.noredundantgenerator = false
 end
-function updateine!(p::QHullPolyhedron{N}, ine::HRepresentation{N, Float64}) where N
-    clearfield!(p)
-    p.ine = ine
-end
-function updateext!(p::QHullPolyhedron{N}, ext::VRepresentation{N, Float64}) where N
-    clearfield!(p)
-    p.ext = ext
-end
-
 
 # Implementation of Polyhedron's mandatory interface
-polyhedron(repit::Union{Representation{N},HRepIterator{N},VRepIterator{N}}, p::QHullLibrary) where {N} = QHullPolyhedron{N}(repit, p.solver)
+function Polyhedra.polyhedron(repit::Representation{N}, lib::QHullLibrary) where {N}
+    QHullPolyhedron{N}(repit, lib.solver)
+end
 
-getlibraryfor(p::QHullPolyhedron, n::Int, ::Type{T}) where {T<:AbstractFloat} = QHullLibrary(p.solver)
+QHullPolyhedron{N}(h::HRepresentation{N}, solver=nothing) where N = QHullPolyhedron{N}(MixedMatHRep{N,Float64}(h), solver)
+QHullPolyhedron{N}(v::VRepresentation{N}, solver=nothing) where N = QHullPolyhedron{N}(MixedMatVRep{N,Float64}(v), solver)
 
-QHullPolyhedron{N}(it::HRepIterator{N,T}) where {N, T} = QHullPolyhedron{N}(SimpleHRepresentation{N,Float64}(it))
-QHullPolyhedron{N}(it::VRepIterator{N,T}) where {N, T} = QHullPolyhedron{N}(SimpleVRepresentation{N,Float64}(it))
+QHullPolyhedron{N}(hps::Polyhedra.HyperPlaneIt{N}, hss::Polyhedra.HalfSpaceIt{N}, solver=nothing) where N = QHullPolyhedron{N}(MixedMatHRep{N, Float64}(hps, hss), solver)
+QHullPolyhedron{N}(ps::Polyhedra.PointIt{N}, ls::Polyhedra.LineIt{N}, rs::Polyhedra.RayIt{N}, solver=nothing) where N = QHullPolyhedron{N}(MixedMatVRep{N, Float64}(ps, ls, rs), solver)
 
-QHullPolyhedron{N}(hps::EqIterator{N}, hss::IneqIterator) where N = QHullPolyhedron{N}(SimpleHRepresentation{N, Float64}(hps, hss))
-QHullPolyhedron{N}(ps::PointIterator{N}, rs::RayIterator) where N = QHullPolyhedron{N}(SimpleVRepresentation{N, Float64}(ps, rs))
-
-changefulldim{N}(::Type{QHullPolyhedron{N}}, n) = QHullPolyhedron{n}
 function Base.copy(p::QHullPolyhedron{N}) where N
     ine = nothing
     if !isnull(p.ine)
@@ -212,56 +219,46 @@ function Base.copy(p::QHullPolyhedron{N}) where N
     if !isnull(p.ext)
         ext = copy(get(p.ext))
     end
-    QHullPolyhedron{N}(ine, ext, p.hlinearitydetected, p.vlinearitydetected, p.noredundantinequality, p.noredundantgenerator)
+    QHullPolyhedron{N}(ine, ext, p.noredundantinequality, p.noredundantgenerator, p.solver)
 end
-function Base.push!(p::QHullPolyhedron{N}, ine::HRepresentation{N}) where N
-    updateine!(p, intersect(getine(p), changeeltype(ine, Float64)))
-end
-function Base.push!(p::QHullPolyhedron{N}, ext::VRepresentation{N}) where N
-    updateext!(p, getext(p) + changeeltype(ext, Float64))
-end
-function hrepiscomputed(p::QHullPolyhedron)
+function Polyhedra.hrepiscomputed(p::QHullPolyhedron)
     !isnull(p.ine)
 end
-function hrep(p::QHullPolyhedron)
-    copy(getine(p))
+function Polyhedra.hrep(p::QHullPolyhedron)
+    getine(p)
 end
-function vrepiscomputed(p::QHullPolyhedron)
+function Polyhedra.vrepiscomputed(p::QHullPolyhedron)
     !isnull(p.ext)
 end
-function vrep(p::QHullPolyhedron)
-    copy(getext(p))
+function Polyhedra.vrep(p::QHullPolyhedron)
+    getext(p)
 end
-function detecthlinearities!(p::QHullPolyhedron)
-    warn("detecthlinearities! not supported yet")
+function Polyhedra.sethrep!(p::QHullPolyhedron{N}, h::HRepresentation{N}) where N
+    p.ine = h
+    p.ines = nothing
 end
-function detectvlinearities!(p::QHullPolyhedron)
-    warn("detectvlinearities! not supported yet")
+function Polyhedra.setvrep!(p::QHullPolyhedron{N}, v::VRepresentation{N}) where N
+    p.ext = v
+    p.exts = nothing
 end
-function removehredundancy!(p::QHullPolyhedron)
+function resethrep!(p::QHullPolyhedron{N}, h::HRepresentation{N}) where N
+    clearfield!(p)
+    p.ine = h
+end
+function resetvrep!(p::QHullPolyhedron{N}, v::VRepresentation{N}) where N
+    clearfield!(p)
+    p.ext = v
+end
+function Polyhedra.removehredundancy!(p::QHullPolyhedron)
     qhull(p, :H)
 end
-function removevredundancy!(p::QHullPolyhedron)
+function Polyhedra.removevredundancy!(p::QHullPolyhedron)
     qhull(p, :V)
 end
 
-function volume(p::QHullPolyhedron)
+function Polyhedra.volume(p::QHullPolyhedron)
     if isnull(p.volume)
         qhull(p)
     end
     get(p.volume)
-end
-
-for f in [:hashreps, :nhreps, :starthrep, :hasineqs, :nineqs, :startineq, :haseqs, :neqs, :starteq]
-    @eval $f(p::QHullPolyhedron) = $f(getine(p))
-end
-for f in [:donehrep, :nexthrep, :doneineq, :nextineq, :doneeq, :nexteq]
-    @eval $f(p::QHullPolyhedron, state) = $f(getine(p), state)
-end
-
-for f in [:hasvreps, :nvreps, :startvrep, :haspoints, :npoints, :startpoint, :hasrays, :nrays, :startray]
-    @eval $f(p::QHullPolyhedron) = $f(getext(p))
-end
-for f in [:donevrep, :nextvrep, :donepoint, :nextpoint, :doneray, :nextray]
-    @eval $f(p::QHullPolyhedron, state) = $f(getext(p), state)
 end
