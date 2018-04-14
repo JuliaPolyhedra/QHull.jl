@@ -34,8 +34,14 @@ end
 Polyhedra.library(p::QHullPolyhedron) = QHullLibrary(p.solver)
 Polyhedra.similar_type(::Type{<:QHullPolyhedron}, d::FullDim{1}, ::Type{Float64}) = default_type(d, Float64)
 Polyhedra.similar_type(::Type{<:QHullPolyhedron}, d::FullDim, ::Type{T}) where T = default_type(d, T)
-# FIXME the solver is lost here, it makes doc test fail
 Polyhedra.similar_type(::Type{<:QHullPolyhedron}, ::FullDim{N}, ::Type{Float64}) where N = QHullPolyhedron{N}
+
+function Polyhedra.similar(p::Tuple{<:QHullPolyhedron}, d::FullDim{1}, T::Type{Float64}, it::Polyhedra.It{1, Float64}...)
+    Polyhedra.default_similar(p, d, T, it...)
+end
+function Polyhedra.similar(p::Tuple{<:QHullPolyhedron}, ::FullDim{N}, ::Type{Float64}, it::Polyhedra.It{N, Float64}...) where {N}
+    QHullPolyhedron{N}(it..., p[1].solver)
+end
 
 function Polyhedra.arraytype(p::QHullPolyhedron)
     if isnull(p.ine) && !isnull(p.ines)
