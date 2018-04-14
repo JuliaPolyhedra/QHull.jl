@@ -36,12 +36,8 @@ Polyhedra.similar_type(::Type{<:QHullPolyhedron}, d::FullDim{1}, ::Type{Float64}
 Polyhedra.similar_type(::Type{<:QHullPolyhedron}, d::FullDim, ::Type{T}) where T = default_type(d, T)
 Polyhedra.similar_type(::Type{<:QHullPolyhedron}, ::FullDim{N}, ::Type{Float64}) where N = QHullPolyhedron{N}
 
-function Polyhedra.similar(p::Tuple{<:QHullPolyhedron}, d::FullDim{1}, T::Type{Float64}, it::Polyhedra.It{1, Float64}...)
-    Polyhedra.default_similar(p, d, T, it...)
-end
-function Polyhedra.similar(p::Tuple{<:QHullPolyhedron}, ::FullDim{N}, ::Type{Float64}, it::Polyhedra.It{N, Float64}...) where {N}
-    QHullPolyhedron{N}(it..., p[1].solver)
-end
+Polyhedra.default_solver(p::QHullPolyhedron) = p.solver
+Polyhedra.supportssolver(::Type{<:QHullPolyhedron}) = true
 
 function Polyhedra.arraytype(p::QHullPolyhedron)
     if isnull(p.ine) && !isnull(p.ines)
@@ -210,11 +206,11 @@ function Polyhedra.polyhedron(repit::Representation{N}, lib::QHullLibrary) where
     QHullPolyhedron{N}(repit, lib.solver)
 end
 
-QHullPolyhedron{N}(h::HRepresentation{N}, solver=nothing) where N = QHullPolyhedron{N}(MixedMatHRep{N,Float64}(h), solver)
-QHullPolyhedron{N}(v::VRepresentation{N}, solver=nothing) where N = QHullPolyhedron{N}(MixedMatVRep{N,Float64}(v), solver)
+QHullPolyhedron{N}(h::HRepresentation{N}, solver) where N = QHullPolyhedron{N}(MixedMatHRep{N,Float64}(h), solver)
+QHullPolyhedron{N}(v::VRepresentation{N}, solver) where N = QHullPolyhedron{N}(MixedMatVRep{N,Float64}(v), solver)
 
-QHullPolyhedron{N}(hps::Polyhedra.HyperPlaneIt{N}, hss::Polyhedra.HalfSpaceIt{N}, solver=nothing) where N = QHullPolyhedron{N}(MixedMatHRep{N, Float64}(hps, hss), solver)
-QHullPolyhedron{N}(ps::Polyhedra.PointIt{N}, ls::Polyhedra.LineIt{N}, rs::Polyhedra.RayIt{N}, solver=nothing) where N = QHullPolyhedron{N}(MixedMatVRep{N, Float64}(ps, ls, rs), solver)
+QHullPolyhedron{N}(hps::Polyhedra.HyperPlaneIt{N}, hss::Polyhedra.HalfSpaceIt{N}; solver=nothing) where N = QHullPolyhedron{N}(MixedMatHRep{N, Float64}(hps, hss), solver)
+QHullPolyhedron{N}(ps::Polyhedra.PointIt{N}, ls::Polyhedra.LineIt{N}, rs::Polyhedra.RayIt{N}; solver=nothing) where N = QHullPolyhedron{N}(MixedMatVRep{N, Float64}(ps, ls, rs), solver)
 
 function Base.copy(p::QHullPolyhedron{N}) where N
     ine = nothing
