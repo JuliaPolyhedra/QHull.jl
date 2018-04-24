@@ -57,7 +57,7 @@ function Base.show(io::IO, ::MIME"text/plain", ch::Chull)
 end
 
 using RecipesBase
-@recipe function f{T<:Chull}(val::T)
+@recipe function f(val::T) where T<:Chull
     size(val.points, 2) > 2 && warning("Only the two first dimensions are plotted!")
     x = val.points[val.vertices,:]
     seriestype --> :shape
