@@ -12,9 +12,9 @@ Polyhedra.similar_library(l::QHullLibrary, ::FullDim, ::Type{<:AbstractFloat}) =
 
 mutable struct QHullPolyhedron{N} <: Polyhedron{N, Float64}
     ine::Nullable{HRepresentation{N, Float64}}
-    ines::Nullable{MixedMatHRep{N, Float64}}
+    ines::Nullable{MixedMatHRep{N, Float64, Matrix{Float64}}}
     ext::Nullable{VRepresentation{N, Float64}}
-    exts::Nullable{MixedMatVRep{N, Float64}}
+    exts::Nullable{MixedMatVRep{N, Float64, Matrix{Float64}}}
     noredundantinequality::Bool
     noredundantgenerator::Bool
     solver
@@ -206,11 +206,11 @@ function Polyhedra.polyhedron(repit::Representation{N}, lib::QHullLibrary) where
     QHullPolyhedron{N}(repit, lib.solver)
 end
 
-QHullPolyhedron{N}(h::HRepresentation{N}, solver) where N = QHullPolyhedron{N}(MixedMatHRep{N,Float64}(h), solver)
-QHullPolyhedron{N}(v::VRepresentation{N}, solver) where N = QHullPolyhedron{N}(MixedMatVRep{N,Float64}(v), solver)
+QHullPolyhedron{N}(h::HRepresentation{N}, solver) where N = QHullPolyhedron{N}(MixedMatHRep{N,Float64, Matrix{Float64}}(h), solver)
+QHullPolyhedron{N}(v::VRepresentation{N}, solver) where N = QHullPolyhedron{N}(MixedMatVRep{N,Float64, Matrix{Float64}}(v), solver)
 
-QHullPolyhedron{N}(hps::Polyhedra.HyperPlaneIt{N}, hss::Polyhedra.HalfSpaceIt{N}; solver=nothing) where N = QHullPolyhedron{N}(MixedMatHRep{N, Float64}(hps, hss), solver)
-QHullPolyhedron{N}(ps::Polyhedra.PointIt{N}, ls::Polyhedra.LineIt{N}, rs::Polyhedra.RayIt{N}; solver=nothing) where N = QHullPolyhedron{N}(MixedMatVRep{N, Float64}(ps, ls, rs), solver)
+QHullPolyhedron{N}(hps::Polyhedra.HyperPlaneIt{N}, hss::Polyhedra.HalfSpaceIt{N}; solver=nothing) where N = QHullPolyhedron{N}(MixedMatHRep{N, Float64, Matrix{Float64}}(hps, hss), solver)
+QHullPolyhedron{N}(ps::Polyhedra.PointIt{N}, ls::Polyhedra.LineIt{N}, rs::Polyhedra.RayIt{N}; solver=nothing) where N = QHullPolyhedron{N}(MixedMatVRep{N, Float64, Matrix{Float64}}(ps, ls, rs), solver)
 
 function Base.copy(p::QHullPolyhedron{N}) where N
     ine = nothing
