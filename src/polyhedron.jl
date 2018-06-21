@@ -11,10 +11,8 @@ Polyhedra.similar_library(l::QHullLibrary, d::FullDim, ::Type{T}) where T = defa
 Polyhedra.similar_library(l::QHullLibrary, ::FullDim, ::Type{<:AbstractFloat}) = QHullLibrary(l.solver)
 
 mutable struct QHullPolyhedron{N} <: Polyhedron{N, Float64}
-    ine::Nullable{HRepresentation{N, Float64}}
-    ines::Nullable{MixedMatHRep{N, Float64, Matrix{Float64}}}
-    ext::Nullable{VRepresentation{N, Float64}}
-    exts::Nullable{MixedMatVRep{N, Float64, Matrix{Float64}}}
+    ine::Nullable{MixedMatHRep{N, Float64, Matrix{Float64}}}
+    ext::Nullable{MixedMatVRep{N, Float64, Matrix{Float64}}}
     noredundantinequality::Bool
     noredundantgenerator::Bool
     solver
@@ -22,13 +20,13 @@ mutable struct QHullPolyhedron{N} <: Polyhedron{N, Float64}
     volume::Nullable{Float64}
 
     function QHullPolyhedron{N}(ine, ext, nri::Bool, nrg::Bool, solver) where N
-        new(ine, nothing, ext, nothing, nri, nrg, solver, nothing, nothing)
+        new(ine, ext, nri, nrg, solver, nothing, nothing)
     end
     function QHullPolyhedron{N}(ine::HRepresentation{N, Float64}, solver) where N
-        new(ine, nothing, nothing, nothing, false, false, solver, nothing, nothing)
+        new(ine, nothing, false, false, solver, nothing, nothing)
     end
     function QHullPolyhedron{N}(ext::VRepresentation{N, Float64}, solver) where N
-        new(nothing, nothing, ext, nothing, false, false, solver, nothing, nothing)
+        new(nothing, ext, false, false, solver, nothing, nothing)
     end
 end
 Polyhedra.library(p::QHullPolyhedron) = QHullLibrary(p.solver)
@@ -39,45 +37,26 @@ Polyhedra.similar_type(::Type{<:QHullPolyhedron}, ::FullDim{N}, ::Type{Float64})
 Polyhedra.default_solver(p::QHullPolyhedron) = p.solver
 Polyhedra.supportssolver(::Type{<:QHullPolyhedron}) = true
 
-function Polyhedra.arraytype(p::QHullPolyhedron)
-    if isnull(p.ine) && !isnull(p.ines)
-        p.ine = get(p.ines)
-    end
-    if isnull(p.ext) && !isnull(p.exts)
-        p.ext = get(p.exts)
-    end
-    if isnull(p.ine)
-        Polyhedra.arraytype(get(p.ext))
-    elseif isnull(p.ext)
-        Polyhedra.arraytype(get(p.ine))
-    else
-        @assert Polyhedra.arraytype(get(p.ine)) == Polyhedra.arraytype(get(p.ext))
-        Polyhedra.arraytype(get(p.ine))
-    end
-end
-
+Polyhedra.hvectortype(::Union{QHullPolyhedron{N}, Type{QHullPolyhedron{N}}}) where N = Polyhedra.hvectortype(MixedMatHRep{N, Float64, Matrix{Float64}})
+Polyhedra.vvectortype(::Union{QHullPolyhedron{N}, Type{QHullPolyhedron{N}}}) where N = Polyhedra.vvectortype(MixedMatVRep{N, Float64, Matrix{Float64}})
 
 # Helpers
 epsz = 1e-8
 
 function qhull(p::QHullPolyhedron{N}, rep=:Auto) where N
-    if rep == :V || (rep == :Auto && (!isnull(p.ext) || !isnull(p.exts)))
-        p.ext, ine, p.area, p.volume = qhull(getexts(p), p.solver)
-        p.exts = nothing
+    if rep == :V || (rep == :Auto && (!isnull(p.ext)))
+        p.ext, ine, p.area, p.volume = qhull(getext(p), p.solver)
         p.noredundantgenerator = true
         if isnull(p.ine)
             # Otherwise, it is not interesting as it may have redundancy
             p.ine = ine
-            p.ines = nothing
         end
     else
         @assert rep == :H || rep == :Auto
-        p.ine, ext, p.area, p.volume = qhull(getines(p), p.solver)
-        p.ines = nothing
+        p.ine, ext, p.area, p.volume = qhull(getine(p), p.solver)
         p.noredundantinequality = true
         if isnull(p.ext)
             p.ext = ext
-            p.exts = nothing
         end
     end
 end
@@ -161,42 +140,20 @@ end
 
 function getine(p::QHullPolyhedron)
     if isnull(p.ine)
-        if !isnull(p.ines)
-            p.ine = p.ines
-        else
-            qhull(p)
-        end
+        qhull(p)
     end
     get(p.ine)
 end
-function getines(p::QHullPolyhedron)
-    if isnull(p.ines)
-        p.ines = MixedMatHRep(getine(p))
-    end
-    get(p.ines)
-end
 function getext(p::QHullPolyhedron)
     if isnull(p.ext)
-        if !isnull(p.exts)
-            p.ext = p.exts
-        else
-            qhull(p)
-        end
+        qhull(p)
     end
     get(p.ext)
-end
-function getexts(p::QHullPolyhedron)
-    if isnull(p.exts)
-        p.exts = MixedMatVRep(getext(p))
-    end
-    get(p.exts)
 end
 
 function clearfield!(p::QHullPolyhedron)
     p.ine = nothing
-    p.ines = nothing
     p.ext = nothing
-    p.exts = nothing
     p.noredundantinequality = false
     p.noredundantgenerator = false
 end
@@ -237,11 +194,9 @@ function Polyhedra.vrep(p::QHullPolyhedron)
 end
 function Polyhedra.sethrep!(p::QHullPolyhedron{N}, h::HRepresentation{N}) where N
     p.ine = h
-    p.ines = nothing
 end
 function Polyhedra.setvrep!(p::QHullPolyhedron{N}, v::VRepresentation{N}) where N
     p.ext = v
-    p.exts = nothing
 end
 function resethrep!(p::QHullPolyhedron{N}, h::HRepresentation{N}) where N
     clearfield!(p)
