@@ -1,6 +1,6 @@
 language: julia
 julia:
-    - 0.6
-script:
-    - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-    - julia -e 'Pkg.clone(pwd()); ENV["PYTHON"]=""; Pkg.build("QHull"); Pkg.test("QHull")'
+    - 0.7
+    - 1.0
+env:
+    - PYTHON=""
