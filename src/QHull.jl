@@ -5,10 +5,9 @@
 ## This code is licensed under the GNU General Public License, version 2
 ## See the file LICENSE in this distribution
 
-__precompile__(true)
 module QHull
 
-export Chull, chull, display, show
+export Chull, chull
 
 using PyCall
 const spatial = PyNULL()

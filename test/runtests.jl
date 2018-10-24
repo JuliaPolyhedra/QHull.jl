@@ -1,4 +1,4 @@
-using Base.Test
+using Test
 import QHull
 
 pts = [-1.0 0;
