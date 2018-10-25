@@ -25,7 +25,7 @@ ch.simplices      # the simplexes forming the convex hull
 show(ch)
 ```
 
-Using [Polyhedra.jl](https://github.com/blegat/Polyhedra.jl)
+Using [Polyhedra.jl](https://github.com/blegat/Polyhedra.jl):
 ```julia
 using Polyhedra
 # Constructs a V-representation of 10 random points in 2 dimension
