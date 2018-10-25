@@ -1,5 +1,5 @@
-import Polyhedra
 import StaticArrays
+import Polyhedra
 
 struct Library <: Polyhedra.Library
     solver
@@ -42,7 +42,7 @@ Polyhedra.library(p::Polyhedron) = Library(p.solver)
 Polyhedra.similar_type(::Type{<:Polyhedron}, d::Polyhedra.FullDim, T::Type) = Polyhedra.default_type(d, T)
 function Polyhedra.similar_type(::Type{<:Polyhedron}, d::Polyhedra.FullDim, ::Type{Float64})
     if _isone(d)
-        return default_type(d, Float64)
+        return Polyhedra.default_type(d, Float64)
     else
         Polyhedron
     end
