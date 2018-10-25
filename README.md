@@ -13,8 +13,8 @@ This module is a quick wrapper around a Python wrapper around the library, as su
 Synopsis
 --------
 
+Low-level interface:
 ```julia
-
 using QHull
 
 p = rand(10,2)
@@ -23,4 +23,22 @@ ch.points         # original points
 ch.vertices       # indices to line segments forming the convex hull
 ch.simplices      # the simplexes forming the convex hull
 show(ch)
+```
+
+Using [Polyhedra.jl](https://github.com/blegat/Polyhedra.jl)
+```julia
+using Polyhedra
+# Constructs a V-representation of 10 random points in 2 dimension
+v = vrep(rand(10, 2))
+
+using QHull
+# Constructs a polyhedon from this V-representation with the QHull library
+p = polyhedron(v, QHull.Library())
+# Removing redundant points, i.e. points which are in the interior of the convex hull
+removevredundancy!(p)
+# Show remaining points, i.e. the non-redundant ones
+removevredundancy!(p)
+@show vrep(p)
+# Show the H-representation, the facets describing the polytope
+@show hrep(p)
 ```
