@@ -31,17 +31,17 @@ incone(x) = for i in 1:length(x)
 end
 
 function chull(x::Matrix{T}) where T<:Real
-    py = spatial[:ConvexHull](x)
-    points = convert(Matrix{T}, py["points"])
-    vertices = convert(Vector{Int}, py["vertices"])
+    py = spatial.ConvexHull(x)
+    points = convert(Matrix{T}, py."points")
+    vertices = convert(Vector{Int}, py."vertices")
     incone(vertices)
-    simplices = convert(Vector{Vector{Int}}, py["simplices"])
+    simplices = convert(Vector{Vector{Int}}, py."simplices")
     for simplex in simplices
         incone(simplex)
     end
-    facets = convert(Matrix{T}, py["equations"])
-    area = convert(Float64, py["area"])
-    volume = convert(Float64, py["volume"])
+    facets = convert(Matrix{T}, py."equations")
+    area = convert(Float64, py."area")
+    volume = convert(Float64, py."volume")
     Chull(points, vertices, simplices, facets, area, volume)
 end
 
