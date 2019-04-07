@@ -4,7 +4,7 @@ QHull
 
 
 A Julia wrapper around a PyCall wrapper around `scipy.spatial.ConvexHull`, which uses the qhull Convex Hull library.
-It implements the Polyhedral Computation library interface of [Polyhedra.jl](https://github.com/blegat/Polyhedra.jl).
+It implements the Polyhedral Computation library interface of [Polyhedra.jl](https://github.com/JuliaPolyhedra/Polyhedra.jl).
 
 The qhull library for computing the convex hull of data points seems to be the standard and very widely used.
 
@@ -25,7 +25,7 @@ ch.simplices      # the simplexes forming the convex hull
 show(ch)
 ```
 
-Using [Polyhedra.jl](https://github.com/blegat/Polyhedra.jl):
+Using [Polyhedra.jl](https://github.com/JuliaPolyhedra/Polyhedra.jl):
 ```julia
 using Polyhedra
 # Constructs a V-representation of 10 random points in 2 dimension
