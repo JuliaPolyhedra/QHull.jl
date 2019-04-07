@@ -48,7 +48,7 @@ function Polyhedra.similar_type(::Type{<:Polyhedron}, d::Polyhedra.FullDim, ::Ty
     end
 end
 
-Polyhedra.default_solver(p::Polyhedron) = p.solver
+Polyhedra.default_solver(p::Polyhedron; T=nothing) = p.solver
 Polyhedra.supportssolver(::Type{<:Polyhedron}) = true
 
 Polyhedra.hvectortype(::Union{Polyhedron, Type{Polyhedron}}) = Polyhedra.hvectortype(Polyhedra.MixedMatHRep{Float64, Matrix{Float64}})
