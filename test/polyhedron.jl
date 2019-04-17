@@ -8,5 +8,5 @@ include(joinpath(polyhedra_test, "polyhedra.jl"))
 @testset "Polyhedra tests" begin
     polyhedratest(QHull.Library(lp_solver), ["jumpsimplex", "ex1", "infeasible", "nonfulldimensional",
                                              "simplex", "permutahedron", "board", "issue48", "empty",
-                                             "orthantdecompose", "largedecompose"])
+                                             "orthantdecompose", "largedecompose", "recipe"])
 end

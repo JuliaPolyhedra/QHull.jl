@@ -55,13 +55,4 @@ function Base.show(io::IO, ::MIME"text/plain", ch::Chull)
     println(io, ch.points[sort(ch.vertices[:, 1]), :])
 end
 
-using RecipesBase
-@recipe function f(val::T) where T<:Chull
-    size(val.points, 2) > 2 && warning("Only the two first dimensions are plotted!")
-    x = val.points[val.vertices,:]
-    seriestype --> :shape
-    legend --> false
-    x[:,1], x[:,2]
-end
-
 end

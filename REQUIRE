@@ -1,5 +1,0 @@
-julia 1.0
-RecipesBase
-PyCall 1.90
-Polyhedra 0.4.2 0.5
-StaticArrays
