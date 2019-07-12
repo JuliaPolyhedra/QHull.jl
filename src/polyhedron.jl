@@ -20,8 +20,8 @@ end
 mutable struct Polyhedron <: Polyhedra.Polyhedron{Float64}
     ine::Union{Nothing, Polyhedra.MixedMatHRep{Float64, Matrix{Float64}}}
     ext::Union{Nothing, Polyhedra.MixedMatVRep{Float64, Matrix{Float64}}}
-    noredundantinequality::Bool
-    noredundantgenerator::Bool
+    nohredundancy::Bool
+    novredundancy::Bool
     solver::Polyhedra.SolverOrNot
     area::Union{Nothing, Float64}
     volume::Union{Nothing, Float64}
@@ -60,7 +60,6 @@ epsz = 1e-8
 function qhull(p::Polyhedron, rep=:Auto)
     if rep == :V || (rep == :Auto && (p.ext !== nothing))
         p.ext, ine, p.area, p.volume = qhull(getext(p), p.solver)
-        p.noredundantgenerator = true
         if p.ine === nothing
             # Otherwise, it is not interesting as it may have redundancy
             p.ine = ine
@@ -68,11 +67,12 @@ function qhull(p::Polyhedron, rep=:Auto)
     else
         @assert rep == :H || rep == :Auto
         p.ine, ext, p.area, p.volume = qhull(getine(p), p.solver)
-        p.noredundantinequality = true
         if p.ext === nothing
             p.ext = ext
         end
     end
+    p.nohredundancy = true
+    p.novredundancy = true
 end
 
 function qhull(h::Polyhedra.MixedMatVRep{T}, solver=nothing) where T
@@ -85,9 +85,13 @@ function qhull(h::Polyhedra.MixedMatVRep{T}, solver=nothing) where T
     vnored = Polyhedra.vrep(V)
     N = Polyhedra.fulldim(h)
     A = ch.facets[:, 1:N]
-    b = ch.facets[:, N+1]
+    b = -ch.facets[:, N+1]
     h = Polyhedra.hrep(A, b)
-    vnored, h, ch.area, ch.volume
+    # The same facet may be listed several times in case the facet is not
+    # simplicial, e.g. a quad facet is listed twice as it is made of two
+    # triangles. After `removeduplicates`, there should be no redundancy.
+    hnored = Polyhedra.removeduplicates(h)
+    vnored, hnored, ch.area, ch.volume
 end
 
 function qhull(h::Polyhedra.MixedMatHRep{T}, solver=nothing) where {T<:Real}
@@ -151,7 +155,9 @@ function qhull(h::Polyhedra.MixedMatHRep{T}, solver=nothing) where {T<:Real}
     if !containorigin
         v = Polyhedra.translate(v, chebycenter)
     end
-    hnored, v, ch.area, ch.volume
+    # See comment in `qhull(::MixedMatVRep)`.
+    vnored = Polyhedra.removeduplicates(v)
+    hnored, vnored, ch.area, ch.volume
 end
 
 function getine(p::Polyhedron)
@@ -170,8 +176,8 @@ end
 function clearfield!(p::Polyhedron)
     p.ine = nothing
     p.ext = nothing
-    p.noredundantinequality = false
-    p.noredundantgenerator = false
+    p.nohredundancy = false
+    p.novredundancy = false
 end
 
 # Implementation of Polyhedron's mandatory interface
@@ -194,7 +200,7 @@ function Base.copy(p::Polyhedron)
     if p.ext !== nothing
         ext = copy(p.ext)
     end
-    Polyhedron(ine, ext, p.noredundantinequality, p.noredundantgenerator, p.solver)
+    Polyhedron(ine, ext, p.nohredundancy, p.novredundancy, p.solver)
 end
 function Polyhedra.hrepiscomputed(p::Polyhedron)
     p.ine !== nothing
@@ -223,10 +229,14 @@ function Polyhedra.resetvrep!(p::Polyhedron, v::Polyhedra.VRepresentation)
     p.ext = v
 end
 function Polyhedra.removehredundancy!(p::Polyhedron)
-    qhull(p, :H)
+    if !p.nohredundancy
+        qhull(p, :H)
+    end
 end
 function Polyhedra.removevredundancy!(p::Polyhedron)
-    qhull(p, :V)
+    if !p.novredundancy
+        qhull(p, :V)
+    end
 end
 
 function Polyhedra.volume(p::Polyhedron)
