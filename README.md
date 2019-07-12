@@ -37,7 +37,6 @@ p = polyhedron(v, QHull.Library())
 # Removing redundant points, i.e. points which are in the interior of the convex hull
 removevredundancy!(p)
 # Show remaining points, i.e. the non-redundant ones
-removevredundancy!(p)
 @show vrep(p)
 # Show the H-representation, the facets describing the polytope
 @show hrep(p)
