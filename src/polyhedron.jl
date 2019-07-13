@@ -66,7 +66,7 @@ function qhull(p::Polyhedron, rep=:Auto)
         end
     else
         @assert rep == :H || rep == :Auto
-        p.ine, ext, p.area, p.volume = qhull(getine(p), p.solver)
+        p.ine, ext = qhull(getine(p), p.solver)
         if p.ext === nothing
             p.ext = ext
         end
@@ -157,7 +157,9 @@ function qhull(h::Polyhedra.MixedMatHRep{T}, solver=nothing) where {T<:Real}
     end
     # See comment in `qhull(::MixedMatVRep)`.
     vnored = Polyhedra.removeduplicates(v)
-    hnored, vnored, ch.area, ch.volume
+    # `ch.area`, `ch.volume` give area and volume of the polar of the shifted
+    # polytope, not the area and volume of the polytope with reps `h` and `v`.
+    hnored, vnored
 end
 
 function getine(p::Polyhedron)
@@ -241,7 +243,7 @@ end
 
 function Polyhedra.volume(p::Polyhedron)
     if p.volume === nothing
-        qhull(p)
+        qhull(p, :V)
     end
-    p.volume
+    return p.volume
 end
