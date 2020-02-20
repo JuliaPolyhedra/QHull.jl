@@ -2,7 +2,7 @@ import StaticArrays
 import Polyhedra
 
 struct Library <: Polyhedra.Library
-    solver::Polyhedra.SolverOrNot
+    solver
 end
 Library() = Library(nothing)
 _isone(d::Int) = isone(d)
@@ -22,7 +22,7 @@ mutable struct Polyhedron <: Polyhedra.Polyhedron{Float64}
     ext::Union{Nothing, Polyhedra.MixedMatVRep{Float64, Matrix{Float64}}}
     nohredundancy::Bool
     novredundancy::Bool
-    solver::Polyhedra.SolverOrNot
+    solver
     area::Union{Nothing, Float64}
     volume::Union{Nothing, Float64}
 
