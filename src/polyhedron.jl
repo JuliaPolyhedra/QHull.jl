@@ -18,8 +18,8 @@ function Polyhedra.similar_library(l::Library, d::Polyhedra.FullDim, ::Type{Floa
 end
 
 mutable struct Polyhedron <: Polyhedra.Polyhedron{Float64}
-    ine::Union{Nothing, Polyhedra.MixedMatHRep{Float64, Matrix{Float64}}}
-    ext::Union{Nothing, Polyhedra.MixedMatVRep{Float64, Matrix{Float64}}}
+    hrep::Union{Nothing, Polyhedra.MixedMatHRep{Float64, Matrix{Float64}}}
+    vrep::Union{Nothing, Polyhedra.MixedMatVRep{Float64, Matrix{Float64}}}
     nohredundancy::Bool
     novredundancy::Bool
     solver
@@ -37,7 +37,7 @@ mutable struct Polyhedron <: Polyhedra.Polyhedron{Float64}
     end
 end
 
-Polyhedra.FullDim(p::Polyhedron) = Polyhedra.FullDim_rep(p.ine, p.ext)
+Polyhedra.FullDim(p::Polyhedron) = Polyhedra.FullDim_rep(p.hrep, p.vrep)
 Polyhedra.library(p::Polyhedron) = Library(p.solver)
 Polyhedra.similar_type(::Type{<:Polyhedron}, d::Polyhedra.FullDim, T::Type) = Polyhedra.default_type(d, T)
 function Polyhedra.similar_type(::Type{<:Polyhedron}, d::Polyhedra.FullDim, ::Type{Float64})
@@ -58,24 +58,25 @@ Polyhedra.vvectortype(::Union{Polyhedron, Type{Polyhedron}}) = Polyhedra.vvector
 epsz = 1e-8
 
 function qhull(p::Polyhedron, rep=:Auto)
-    if rep == :V || (rep == :Auto && (p.ext !== nothing))
-        p.ext, ine, p.area, p.volume = qhull(getext(p), p.solver)
-        if p.ine === nothing
+    if rep == :V || (rep == :Auto && (p.vrep !== nothing))
+        p.vrep, ine, p.area, p.volume = qhull(Polyhedra.vrep(p), p.solver)
+        if p.hrep === nothing
             # Otherwise, it is not interesting as it may have redundancy
-            p.ine = ine
+            p.hrep = ine
         end
     else
         @assert rep == :H || rep == :Auto
-        p.ine, ext = qhull(getine(p), p.solver)
-        if p.ext === nothing
-            p.ext = ext
+        p.hrep, ext = qhull(Polyhedra.hrep(p), p.solver)
+        if p.vrep === nothing
+            p.vrep = ext
         end
     end
     p.nohredundancy = true
     p.novredundancy = true
+    return
 end
 
-function qhull(h::Polyhedra.MixedMatVRep{T}, solver=nothing) where T
+function qhull(h::Polyhedra.MixedMatVRep{T}, solver) where T
     if Polyhedra.hasrays(h)
         error("Rays are not supported.")
     end
@@ -90,11 +91,11 @@ function qhull(h::Polyhedra.MixedMatVRep{T}, solver=nothing) where T
     # The same facet may be listed several times in case the facet is not
     # simplicial, e.g. a quad facet is listed twice as it is made of two
     # triangles. After `removeduplicates`, there should be no redundancy.
-    hnored = Polyhedra.removeduplicates(h)
+    hnored = Polyhedra.removeduplicates(h, Polyhedra.OppositeMockOptimizer)
     vnored, hnored, ch.area, ch.volume
 end
 
-function qhull(h::Polyhedra.MixedMatHRep{T}, solver=nothing) where {T<:Real}
+function qhull(h::Polyhedra.MixedMatHRep{T}, solver) where {T<:Real}
     linset = h.linset
     if !isempty(linset)
         error("Equalities are not supported.")
@@ -162,22 +163,9 @@ function qhull(h::Polyhedra.MixedMatHRep{T}, solver=nothing) where {T<:Real}
     hnored, vnored
 end
 
-function getine(p::Polyhedron)
-    if p.ine === nothing
-        qhull(p)
-    end
-    p.ine
-end
-function getext(p::Polyhedron)
-    if p.ext === nothing
-        qhull(p)
-    end
-    p.ext
-end
-
 function clearfield!(p::Polyhedron)
-    p.ine = nothing
-    p.ext = nothing
+    p.hrep = nothing
+    p.vrep = nothing
     p.nohredundancy = false
     p.novredundancy = false
 end
@@ -195,40 +183,14 @@ Polyhedron(d::Polyhedra.FullDim, ps::Polyhedra.PointIt, ls::Polyhedra.LineIt, rs
 
 function Base.copy(p::Polyhedron)
     ine = nothing
-    if p.ine !== nothing
-        ine = copy(p.ine)
+    if p.hrep !== nothing
+        ine = copy(p.hrep)
     end
     ext = nothing
-    if p.ext !== nothing
-        ext = copy(p.ext)
+    if p.vrep !== nothing
+        ext = copy(p.vrep)
     end
     Polyhedron(ine, ext, p.nohredundancy, p.novredundancy, p.solver)
-end
-function Polyhedra.hrepiscomputed(p::Polyhedron)
-    p.ine !== nothing
-end
-function Polyhedra.hrep(p::Polyhedron)
-    getine(p)
-end
-function Polyhedra.vrepiscomputed(p::Polyhedron)
-    p.ext !== nothing
-end
-function Polyhedra.vrep(p::Polyhedron)
-    getext(p)
-end
-function Polyhedra.sethrep!(p::Polyhedron, h::Polyhedra.HRepresentation)
-    p.ine = h
-end
-function Polyhedra.setvrep!(p::Polyhedron, v::Polyhedra.VRepresentation)
-    p.ext = v
-end
-function Polyhedra.resethrep!(p::Polyhedron, h::Polyhedra.HRepresentation)
-    clearfield!(p)
-    p.ine = h
-end
-function Polyhedra.resetvrep!(p::Polyhedron, v::Polyhedra.VRepresentation)
-    clearfield!(p)
-    p.ext = v
 end
 function Polyhedra.removehredundancy!(p::Polyhedron)
     if !p.nohredundancy
@@ -246,4 +208,36 @@ function Polyhedra.volume(p::Polyhedron)
         qhull(p, :V)
     end
     return p.volume
+end
+
+Polyhedra.hrepiscomputed(p::Polyhedron) = p.hrep !== nothing
+Polyhedra.computehrep!(p::Polyhedron) = qhull(p, :V)
+function Polyhedra.hrep(p::Polyhedron)
+    if !Polyhedra.hrepiscomputed(p)
+        Polyhedra.computehrep!(p)
+    end
+    return p.hrep
+end
+Polyhedra.vrepiscomputed(p::Polyhedron) = p.vrep !== nothing
+Polyhedra.computevrep!(p::Polyhedron) = qhull(p, :H)
+function Polyhedra.vrep(p::Polyhedron)
+    if !Polyhedra.vrepiscomputed(p)
+        Polyhedra.computevrep!(p)
+    end
+    return p.vrep
+end
+
+function Polyhedra.sethrep!(p::Polyhedron, h::Polyhedra.HRepresentation)
+    p.hrep = h
+end
+function Polyhedra.setvrep!(p::Polyhedron, v::Polyhedra.VRepresentation)
+    p.vrep = v
+end
+function Polyhedra.resethrep!(p::Polyhedron, h::Polyhedra.HRepresentation)
+    clearfield!(p)
+    p.hrep = h
+end
+function Polyhedra.resetvrep!(p::Polyhedron, v::Polyhedra.VRepresentation)
+    clearfield!(p)
+    p.vrep = v
 end
