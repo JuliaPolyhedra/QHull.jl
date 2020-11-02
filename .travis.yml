@@ -1,8 +1,5 @@
 language: julia
 julia:
-    - 1.0
-    - 1.1
+    - 1
 env:
     - PYTHON=""
-before_script:
-    - julia -e 'using Pkg; Pkg.add(PackageSpec(name="Polyhedra", rev="master"))'
