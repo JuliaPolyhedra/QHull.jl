@@ -1,6 +1,6 @@
 QHull
 =====
-[![Build Status](https://travis-ci.org/JuliaPolyhedra/QHull.jl.svg)](https://travis-ci.org/JuliaPolyhedra/QHull.jl)
+[![Build Status](https://github.com/JuliaPolyhedra/QHull.jl/workflows/CI/badge.svg?branch=master)](https://github.com/JuliaPolyhedra/QHull.jl/actions?query=workflow%3ACI)
 
 
 A Julia wrapper around a PyCall wrapper around `scipy.spatial.ConvexHull`, which uses the qhull Convex Hull library.

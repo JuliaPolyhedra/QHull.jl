@@ -1,5 +1,0 @@
-language: julia
-julia:
-    - 1
-env:
-    - PYTHON=""
