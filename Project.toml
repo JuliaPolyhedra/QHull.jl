@@ -5,12 +5,12 @@ version = "0.2.2"
 
 [deps]
 Polyhedra = "67491407-f73d-577b-9b50-8179a7c68029"
-PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
+Qhull_jll = "784f63db-0788-585a-bace-daefebcd302b"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
 Polyhedra = "0.6.8"
-PyCall = "1.91"
+Qhull_jll = "8.0.1000"
 StaticArrays = "0.12, 1.0"
 julia = "1"
 

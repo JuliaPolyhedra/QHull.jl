@@ -30,7 +30,11 @@ incone(x) = for i in 1:length(x)
     x[i] += 1
 end
 
+import QHull_jll
+
 function chull(x::Matrix{T}) where T<:Real
+    q = ccall((:qh_alloc_qh, Qhull_jll.libqhull_r), Ptr{Cvoid}, (Ptr{Cvoid},), Base.stderr)
+    ccall((:qh_init_B, Qhull_jll.libqhull_r), Cvoid, (Ptr{Cvoid}, Ptr{Cdouble}, Cint, Cint, Cuint), q, Matrix(x'), size(x, 1), size(x, 2), 0)
     py = spatial.ConvexHull(x)
     points = convert(Matrix{T}, py."points")
     vertices = convert(Vector{Int}, py."vertices")
