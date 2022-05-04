@@ -9,7 +9,7 @@ PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
-Polyhedra = "0.6.8"
+Polyhedra = "0.6.8, 0.7"
 PyCall = "1.91"
 StaticArrays = "0.12, 1.0"
 julia = "1"
