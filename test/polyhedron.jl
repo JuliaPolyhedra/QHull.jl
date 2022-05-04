@@ -1,8 +1,11 @@
 using Polyhedra
 const polyhedra_test = joinpath(dirname(dirname(pathof(Polyhedra))), "test")
 
-include(joinpath(polyhedra_test, "solvers.jl"))
-
+using JuMP
+import GLPK
+# Need `"presolve" => GLPK.ON` for `detect_new_linearities`, see
+# https://travis-ci.org/github/JuliaPolyhedra/Polyhedra.jl/jobs/691916637#L486
+lp_solver = optimizer_with_attributes(GLPK.Optimizer, "presolve" => GLPK.GLP_ON, MOI.Silent() => true)
 const LIB = QHull.Library(lp_solver)
 
 @testset "Volume" begin
