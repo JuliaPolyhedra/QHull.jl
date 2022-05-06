@@ -21,7 +21,7 @@ include(joinpath(polyhedra_test, "polyhedra.jl"))
 exclude = [
     "jumpsimplex", "ex1", "infeasible", "nonfulldimensional",
     "simplex", "permutahedron", "board", "issue48", "empty",
-    "orthantdecompose", "largedecompose", "recipe",
+    "orthantdecompose", "largedecompose", "recipe", "issue224",
     # 1D not supported:
     "vhypercubetest1c", "vhypercubetest1u"
 ]
