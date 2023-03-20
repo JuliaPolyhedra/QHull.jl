@@ -18,31 +18,19 @@ end
 
 mutable struct Chull{T<:Real}
     points::Matrix{T}
-    vertices::Vector{Int}
-    simplices::Vector{Vector{Int}}
+    vertices::Vector{Int32}
+    simplices::Matrix{Int32}
     facets::Matrix{T}
     area::Float64
     volume::Float64
 end
 
-## helper for base-0 / base-1 difference
-incone(x) = for i in 1:length(x)
-    x[i] += 1
-end
-
 function chull(x::Matrix{T}) where T<:Real
     py = spatial.ConvexHull(x)
-    points = convert(Matrix{T}, py."points")
-    vertices = convert(Vector{Int}, py."vertices")
-    incone(vertices)
-    simplices = convert(Vector{Vector{Int}}, py."simplices")
-    for simplex in simplices
-        incone(simplex)
-    end
-    facets = convert(Matrix{T}, py."equations")
-    area = convert(Float64, py."area")
-    volume = convert(Float64, py."volume")
-    Chull(points, vertices, simplices, facets, area, volume)
+    res = Chull(py.points, py.vertices, py.simplices, py.equations, py.area, py.volume)
+    res.vertices .+= 1
+    res.simplices .+= 1
+    res
 end
 
 include("polyhedron.jl")
