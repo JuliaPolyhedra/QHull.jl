@@ -1,7 +1,7 @@
 name = "QHull"
 uuid = "a8468747-bd6f-53ef-9e5c-744dbc5c59e7"
 repo = "https://github.com/JuliaPolyhedra/QHull.jl.git"
-version = "0.2.3"
+version = "0.2.4"
 
 [deps]
 Polyhedra = "67491407-f73d-577b-9b50-8179a7c68029"
