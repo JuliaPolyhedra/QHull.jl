@@ -7,7 +7,7 @@ end
 Library() = Library(nothing)
 _isone(d::Int) = isone(d)
 _isone(d::StaticArrays.Size{(1,)}) = true
-_isone(d::StaticArrays.Size) where T = false
+_isone(d::StaticArrays.Size) = false
 Polyhedra.similar_library(l::Library, d::Polyhedra.FullDim, T::Type) = Polyhedra.default_library(d, T)
 function Polyhedra.similar_library(l::Library, d::Polyhedra.FullDim, ::Type{Float64})
     if _isone(d)
