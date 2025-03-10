@@ -55,7 +55,6 @@ Polyhedra.hvectortype(::Union{Polyhedron, Type{Polyhedron}}) = Polyhedra.hvector
 Polyhedra.vvectortype(::Union{Polyhedron, Type{Polyhedron}}) = Polyhedra.vvectortype(Polyhedra.MixedMatVRep{Float64, Matrix{Float64}})
 
 # Helpers
-epsz = 1e-8
 
 function qhull(p::Polyhedron, rep=:Auto)
     if rep == :V || (rep == :Auto && (p.vrep !== nothing))
@@ -95,7 +94,7 @@ function qhull(h::Polyhedra.MixedMatVRep{T}, solver) where T
     vnored, hnored, ch.area, ch.volume
 end
 
-function qhull(h::Polyhedra.MixedMatHRep{T}, solver) where {T<:Real}
+function qhull(h::Polyhedra.MixedMatHRep{T}, solver; tol = Base.rtoldefault(T)) where {T<:Real}
     linset = h.linset
     if !isempty(linset)
         error("Equalities are not supported.")
@@ -113,7 +112,7 @@ function qhull(h::Polyhedra.MixedMatHRep{T}, solver) where {T<:Real}
     B = Matrix{T}(undef, m, N)
     for i in 1:m
         @assert !(i in linset)
-        if b[i] < epsz
+        if b[i] < tol
             error("The origin should be in the interior of the polytope but the $(i)th inequality is not safisfied at the origin.")
         end
         B[i,:] = (@view A[i,:]) / b[i]
@@ -126,10 +125,10 @@ function qhull(h::Polyhedra.MixedMatHRep{T}, solver) where {T<:Real}
     irays = BitSet()
     ipoints = BitSet()
     for i in 1:nvreps
-        if Vlift[i, N+1] > epsz
+        if Vlift[i, N+1] > tol
             error("The origin should be in the interior of the convex hull")
         end
-        if Vlift[i, N+1] > -epsz
+        if Vlift[i, N+1] > -tol
             push!(irays, i)
         else
             push!(ipoints, i)
