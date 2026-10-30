@@ -3,12 +3,12 @@ QHull
 [![Build Status](https://github.com/JuliaPolyhedra/QHull.jl/workflows/CI/badge.svg?branch=master)](https://github.com/JuliaPolyhedra/QHull.jl/actions?query=workflow%3ACI)
 
 
-A Julia wrapper around a PyCall wrapper around `scipy.spatial.ConvexHull`, which uses the qhull Convex Hull library.
+A Julia wrapper around the qhull Convex Hull library through
+[DirectQhull.jl](https://github.com/JuhaHeiskala/DirectQhull.jl) and Qhull_jll.
+No Python installation is required.
 It implements the Polyhedral Computation library interface of [Polyhedra.jl](https://github.com/JuliaPolyhedra/Polyhedra.jl).
 
 The qhull library for computing the convex hull of data points seems to be the standard and very widely used.
-
-This module is a quick wrapper around a Python wrapper around the library, as suggested by [Miles Lubin](https://groups.google.com/d/topic/julia-users/e9m8t5W3TVs/discussion).
 
 Synopsis
 --------
