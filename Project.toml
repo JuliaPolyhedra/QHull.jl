@@ -5,14 +5,14 @@ version = "0.2.6"
 
 [deps]
 Polyhedra = "67491407-f73d-577b-9b50-8179a7c68029"
-PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
+DirectQhull = "c3f9d41a-afcb-471e-bc58-0b8d83bd86f4"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
-Polyhedra = "0.6.8, 0.7, 0.8"
-PyCall = "1.91"
+Polyhedra = "0.6.8, 0.7, 0.8, 0.9"
+DirectQhull = "0.2.1"
 StaticArrays = "0.12, 1.0"
-julia = "1"
+julia = "1.6"
 
 [extras]
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
